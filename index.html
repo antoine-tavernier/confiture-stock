@@ -38,6 +38,7 @@
       color: var(--text);
       min-height: 100dvh;
       overflow-x: hidden;
+      text-transform: uppercase;
     }
 
     /* ── Header ── */
@@ -184,7 +185,7 @@
       font-size: 1.8rem;
       cursor: pointer;
       box-shadow: 0 6px 20px rgba(139,90,140,0.45);
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       -webkit-tap-highlight-color: transparent;
@@ -192,6 +193,56 @@
       z-index: 20;
     }
     .fab:active { transform: scale(0.93); }
+    .fab.visible { display: flex; }
+
+    /* ── Add stock button ── */
+    .add-stock-btn {
+      position: fixed;
+      bottom: calc(24px + var(--safe-bottom));
+      left: 20px;
+      right: 20px;
+      background: var(--purple);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(139,90,140,0.35);
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s;
+      z-index: 20;
+      display: none;
+    }
+    .add-stock-btn:active { transform: scale(0.98); }
+    .add-stock-btn.visible { display: block; }
+
+    /* ── Add location button ── */
+    .add-loc-btn {
+      position: fixed;
+      bottom: calc(24px + var(--safe-bottom));
+      left: 20px;
+      right: 20px;
+      background: var(--purple);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(139,90,140,0.35);
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s;
+      z-index: 20;
+      display: none;
+    }
+    .add-loc-btn:active { transform: scale(0.98); }
+    .add-loc-btn.visible { display: block; }
 
     /* ── Modal ── */
     .overlay {
@@ -294,6 +345,37 @@
       text-transform: uppercase;
       letter-spacing: 0.07em;
     }
+
+    /* ── Search ── */
+    .search-bar {
+      padding: 0 16px 14px;
+      background: var(--bg);
+      display: none;
+    }
+    .search-bar.visible { display: block; }
+    .search-bar input {
+      width: 100%;
+      padding: 11px 16px 11px 38px;
+      border: none;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      text-transform: uppercase;
+      color: var(--text);
+      background: white;
+      outline: none;
+      box-shadow: 0 2px 8px rgba(90,40,100,0.08);
+    }
+    .search-bar input::placeholder { color: var(--muted); }
+    .search-wrap { position: relative; }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -304,9 +386,18 @@
   <span class="total" id="headerTotal"></span>
 </header>
 
+<div class="search-bar" id="searchBar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="search" id="searchInput" placeholder="Rechercher une confiture…" oninput="render()" />
+  </div>
+</div>
+
 <main id="main"></main>
 
-<button class="fab" id="fab" onclick="onFab()">+</button>
+<button class="fab hidden" id="fab"></button>
+<button class="add-loc-btn" id="addLocBtn" onclick="promptAddLocation()">＋ Ajouter un lieu</button>
+<button class="add-stock-btn" id="addStockBtn" onclick="promptAddEntry(currentLocId)">＋ Agrandir le stock</button>
 
 <!-- Modal ajout/édition -->
 <div class="overlay hidden" id="overlay">
@@ -341,8 +432,13 @@ function saveData(data) {
 let data = loadData();
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let currentLocId = null; // null = on est sur la liste des lieux
+let currentLocId = null;
 let modalCallback = null;
+let sortBy = 'name'; // 'name' | 'year' | 'loc' | 'qty'
+const SORT_LABELS = { name: 'Nom', year: 'Année', loc: 'Lieu', qty: 'Quantité' };
+const SORT_OPTIONS = ['name', 'year', 'loc', 'qty'];
+
+function setSortBy(val) { sortBy = val; render(); }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -365,6 +461,11 @@ function renderLocations() {
   document.getElementById('headerTotal').textContent =
     total ? `${total} pot${total > 1 ? 's' : ''}` : '';
   document.getElementById('backBtn').style.display = 'none';
+  document.getElementById('fab').classList.remove('visible');
+  document.getElementById('addLocBtn').classList.add('visible');
+  document.getElementById('addStockBtn').classList.remove('visible');
+  document.getElementById('searchBar').classList.add('visible');
+  const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
 
   const main = document.getElementById('main');
   if (data.length === 0) {
@@ -376,7 +477,7 @@ function renderLocations() {
     return;
   }
 
-  const locsHtml = data.map(loc => {
+  const locsHtml = query ? '' : data.map(loc => {
     const t = totalLoc(loc);
     const n = loc.entries.length;
     return `<div class="card">
@@ -393,9 +494,47 @@ function renderLocations() {
 
   const allEntries = data.flatMap(loc =>
     loc.entries.map(e => ({ id: e.id, name: e.name, qty: e.qty, year: e.year, locName: loc.name }))
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  ).filter(e => !query || e.name.toLowerCase().includes(query))
+   .sort((a, b) => {
+     if (sortBy === 'qty')  return b.qty - a.qty;
+     if (sortBy === 'year') return (b.year || '').localeCompare(a.year || '');
+     if (sortBy === 'loc')  return a.locName.localeCompare(b.locName);
+     return a.name.localeCompare(b.name);
+   });
 
-  const allHtml = allEntries.length === 0 ? '' :
+  const sortPills = SORT_OPTIONS.map(opt =>
+    `<button onclick="setSortBy('${opt}')" style="
+      padding:5px 12px;border:none;border-radius:20px;font-family:inherit;
+      font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;
+      cursor:pointer;-webkit-tap-highlight-color:transparent;
+      background:${sortBy === opt ? 'var(--purple)' : 'white'};
+      color:${sortBy === opt ? 'white' : 'var(--muted)'};
+      box-shadow:${sortBy === opt ? '0 2px 8px rgba(139,90,140,0.3)' : 'none'};
+    ">${SORT_LABELS[opt]}</button>`
+  ).join('');
+
+  const divider = `<div style="margin:18px 0 10px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Tout le stock</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-right:2px;">Trier :</span>
+        ${sortPills}
+      </div>
+      <button onclick="pickJarToOpen()" style="
+        background:var(--purple-soft);color:var(--purple-dark);
+        border:none;border-radius:20px;padding:5px 12px;
+        font-family:inherit;font-size:0.75rem;font-weight:700;
+        text-transform:uppercase;letter-spacing:0.04em;
+        cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;
+      ">🫙 Ouvrir un pot</button>
+    </div>
+  </div>`;
+
+  const allHtml = allEntries.length === 0 ? (query ? `<div class="empty"><div class="icon">🔍</div><p>Aucun résultat</p></div>` : '') :
     `<div class="card">${allEntries.map(e => `
       <div class="stock-row">
         <div class="stock-info">
@@ -405,12 +544,7 @@ function renderLocations() {
         <span class="qty-val">${e.qty}</span>
       </div>`).join('')}</div>`;
 
-  main.innerHTML = locsHtml +
-    `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 14px;">
-      <div style="flex:1;height:1px;background:var(--border);"></div>
-      <span style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Tout le stock</span>
-      <div style="flex:1;height:1px;background:var(--border);"></div>
-    </div>` + allHtml;
+  main.innerHTML = locsHtml + divider + allHtml;
 }
 
 function renderStock(locId) {
@@ -422,6 +556,11 @@ function renderStock(locId) {
   document.getElementById('headerTotal').textContent =
     total ? `${total} pot${total > 1 ? 's' : ''}` : '';
   document.getElementById('backBtn').style.display = 'block';
+  document.getElementById('fab').classList.remove('visible');
+  document.getElementById('addLocBtn').classList.remove('visible');
+  document.getElementById('addStockBtn').classList.add('visible');
+  document.getElementById('searchBar').classList.remove('visible');
+  document.getElementById('searchInput').value = '';
 
   const main = document.getElementById('main');
   if (loc.entries.length === 0) {
@@ -434,17 +573,28 @@ function renderStock(locId) {
   }
 
   main.innerHTML = `<div class="card">${loc.entries.map(e => `
-    <div class="stock-row">
-      <div class="stock-info">
-        <div class="stock-name">${esc(e.name)}</div>
-        ${e.year ? `<div class="stock-year">${esc(e.year)}</div>` : ''}
+    <div class="stock-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="stock-info">
+          <div class="stock-name">${esc(e.name)}</div>
+          ${e.year ? `<div class="stock-year">${esc(e.year)}</div>` : ''}
+        </div>
+        <div class="qty-ctrl">
+          <button class="qty-btn minus" onclick="adjustQty('${loc.id}','${e.id}',-1)">−</button>
+          <span class="qty-val">${e.qty}</span>
+          <button class="qty-btn plus"  onclick="adjustQty('${loc.id}','${e.id}',+1)">+</button>
+        </div>
+        <button class="menu-btn" onclick="entryMenu('${loc.id}','${e.id}')">⋯</button>
       </div>
-      <div class="qty-ctrl">
-        <button class="qty-btn minus" onclick="adjustQty('${loc.id}','${e.id}',-1)">−</button>
-        <span class="qty-val">${e.qty}</span>
-        <button class="qty-btn plus"  onclick="adjustQty('${loc.id}','${e.id}',+1)">+</button>
-      </div>
-      <button class="menu-btn" onclick="entryMenu('${loc.id}','${e.id}')">⋯</button>
+      ${data.filter(l => l.id !== loc.id).length > 0 ? `
+      <button onclick="promptTransfer('${loc.id}','${e.id}')" style="
+        background:var(--purple-soft);color:var(--purple-dark);
+        border:none;border-radius:10px;padding:7px 14px;
+        font-family:inherit;font-size:0.78rem;font-weight:700;
+        text-transform:uppercase;letter-spacing:0.04em;
+        cursor:pointer;-webkit-tap-highlight-color:transparent;
+        width:100%;text-align:center;
+      ">⇄ Transférer</button>` : ''}
     </div>`).join('')}</div>`;
 }
 
@@ -463,11 +613,34 @@ function onFab() {
 }
 
 // ── Quantity ──────────────────────────────────────────────────────────────────
+function pickJarToOpen() {
+  const entries = data.flatMap(loc =>
+    loc.entries.map(e => ({ locId: loc.id, entryId: e.id, name: e.name, locName: loc.name, year: e.year }))
+  ).sort((a, b) => a.name.localeCompare(b.name));
+
+  openCtx('Quelle confiture ?', entries.map(e => ({
+    label: `${e.name}${e.year ? ' ' + e.year : ''} — ${e.locName}`,
+    action: () => confirmOpenJar(e.locId, e.entryId, e.name),
+  })));
+}
+
+function confirmOpenJar(locId, entryId, name) {
+  openCtx(`Ouvrir un pot de ${name} ?`, [
+    { label: '🫙 Confirmer — retirer 1 pot', action: () => {
+      adjustQty(locId, entryId, -1);
+    }},
+  ]);
+}
+
 function adjustQty(locId, entryId, delta) {
   const loc = getLoc(locId);
   const entry = loc.entries.find(e => e.id === entryId);
   if (!entry) return;
   entry.qty = Math.max(0, entry.qty + delta);
+  if (entry.qty === 0) {
+    const loc = getLoc(locId);
+    loc.entries = loc.entries.filter(e => e.id !== entryId);
+  }
   saveData(data);
   render();
 }
@@ -612,11 +785,8 @@ function entryMenu(locId, entryId) {
   const e = getLoc(locId).entries.find(x => x.id === entryId);
   const items = [
     { label: 'Modifier', action: () => promptEditEntry(locId, entryId) },
+    { label: 'Supprimer', danger: true, action: () => deleteEntry(locId, entryId) },
   ];
-  if (data.filter(l => l.id !== locId).length > 0) {
-    items.push({ label: 'Transférer vers…', action: () => promptTransfer(locId, entryId) });
-  }
-  items.push({ label: 'Supprimer', danger: true, action: () => deleteEntry(locId, entryId) });
   openCtx(esc(e.name), items);
 }
 
