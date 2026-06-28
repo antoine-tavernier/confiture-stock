@@ -622,14 +622,10 @@ function onFab() {
 }
 
 // ── Quantity ──────────────────────────────────────────────────────────────────
-function pickJarToOpen(query = '') {
+function pickJarToOpen() {
   const all = data.flatMap(loc =>
     loc.entries.map(e => ({ locId: loc.id, entryId: e.id, name: e.name, locName: loc.name, year: e.year }))
   ).sort((a, b) => a.name.localeCompare(b.name));
-
-  const filtered = query
-    ? all.filter(e => e.name.toLowerCase().includes(query.toLowerCase()))
-    : all;
 
   const menu = document.getElementById('ctxMenu');
   menu.innerHTML = `
@@ -637,27 +633,35 @@ function pickJarToOpen(query = '') {
     <div style="padding:0 16px 12px;">
       <div style="position:relative;">
         <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:0.95rem;pointer-events:none;">🔍</span>
-        <input id="jarSearch" type="search" value="${esc(query)}"
+        <input id="jarSearch" type="search"
           placeholder="Rechercher…"
-          oninput="pickJarToOpen(this.value)"
           style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--border);
           border-radius:12px;font-size:0.9rem;font-family:inherit;text-transform:uppercase;
           background:var(--bg);outline:none;color:var(--text);" />
       </div>
     </div>
-    ${filtered.length === 0
+    <div id="jarList"></div>`;
+
+  document.getElementById('ctxOverlay').classList.remove('hidden');
+
+  function renderJarList(query) {
+    const filtered = query
+      ? all.filter(e => e.name.toLowerCase().includes(query.toLowerCase()))
+      : all;
+    document.getElementById('ctxOverlay')._actions = filtered.map(e =>
+      () => confirmOpenJar(e.locId, e.entryId, e.name)
+    );
+    document.getElementById('jarList').innerHTML = filtered.length === 0
       ? `<div style="padding:16px;text-align:center;color:var(--muted);font-size:0.85rem;">Aucun résultat</div>`
       : filtered.map((e, i) =>
           `<button class="ctx-item" onclick="ctxRawAction(${i})">${esc(e.name)}${e.year ? ' ' + esc(e.year) : ''} — ${esc(e.locName)}</button>`
-        ).join('')
-    }`;
+        ).join('');
+  }
 
-  document.getElementById('ctxOverlay').classList.remove('hidden');
-  document.getElementById('ctxOverlay')._actions = filtered.map(e =>
-    () => confirmOpenJar(e.locId, e.entryId, e.name)
-  );
-
-  setTimeout(() => document.getElementById('jarSearch')?.focus(), 100);
+  renderJarList('');
+  const input = document.getElementById('jarSearch');
+  input.addEventListener('input', () => renderJarList(input.value));
+  setTimeout(() => input.focus(), 100);
 }
 
 function confirmOpenJar(locId, entryId, name) {
