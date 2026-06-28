@@ -6,24 +6,29 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Confiture" />
-  <meta name="theme-color" content="#e85d04" />
+  <meta name="theme-color" content="#f0c0d0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
   <link rel="manifest" href="manifest.json" />
   <title>Stock Confiture</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --orange: #e85d04;
-      --orange-light: #fff1e6;
-      --orange-dark: #c44d02;
-      --red: #dc2626;
-      --text: #1c1917;
-      --muted: #78716c;
-      --border: #e7e5e4;
-      --card: #ffffff;
-      --bg: #fafaf9;
-      --radius: 14px;
-      --safe-top: env(safe-area-inset-top, 0px);
+      --purple:      #8B5A8C;
+      --purple-dark: #5e3460;
+      --purple-soft: #f0daf0;
+      --pink-bg:     #f7dde8;
+      --pink-mid:    #edcad8;
+      --red:         #d94f4f;
+      --green:       #279218;
+      --text:        #1a0e2e;
+      --muted:       #9b87a8;
+      --border:      #e8d5e0;
+      --card:        #ffffff;
+      --bg:          #f7dde8;
+      --radius:      16px;
+      --safe-top:    env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
@@ -37,9 +42,9 @@
 
     /* ── Header ── */
     header {
-      background: var(--orange);
-      color: white;
-      padding: calc(16px + var(--safe-top)) 16px 14px;
+      background: var(--pink-bg);
+      color: var(--text);
+      padding: calc(20px + var(--safe-top)) 20px 16px;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -47,13 +52,27 @@
       top: 0;
       z-index: 10;
     }
-    header h1 { font-size: 1.15rem; font-weight: 700; flex: 1; }
-    header .total { font-size: 0.85rem; opacity: 0.8; white-space: nowrap; }
+    header h1 {
+      flex: 1;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    header .total {
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
     .back-btn {
       background: none;
       border: none;
-      color: white;
-      font-size: 1.4rem;
+      color: var(--purple);
+      font-size: 1.6rem;
       cursor: pointer;
       padding: 0 4px;
       line-height: 1;
@@ -61,7 +80,7 @@
     }
 
     /* ── List ── */
-    main { padding: 16px; padding-bottom: calc(80px + var(--safe-bottom)); }
+    main { padding: 16px; padding-bottom: calc(90px + var(--safe-bottom)); }
 
     .empty {
       text-align: center;
@@ -75,7 +94,8 @@
       background: var(--card);
       border-radius: var(--radius);
       margin-bottom: 10px;
-      border: 1px solid var(--border);
+      border: none;
+      box-shadow: 0 2px 12px rgba(90,40,100,0.08);
       overflow: hidden;
     }
     .card-row {
@@ -87,16 +107,16 @@
       -webkit-tap-highlight-color: transparent;
       transition: background 0.15s;
     }
-    .card-row:active { background: var(--orange-light); }
+    .card-row:active { background: var(--purple-soft); }
 
     .badge {
-      background: var(--orange-light);
-      color: var(--orange-dark);
+      background: var(--purple-soft);
+      color: var(--purple-dark);
       font-weight: 700;
       font-size: 0.9rem;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 42px;
+      height: 42px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -104,7 +124,7 @@
     }
 
     .card-info { flex: 1; min-width: 0; }
-    .card-name { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-name { font-weight: 700; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
     .card-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
 
     .menu-btn {
@@ -123,36 +143,39 @@
     .stock-row {
       display: flex;
       align-items: center;
-      padding: 12px 16px;
+      padding: 13px 16px;
       gap: 8px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid #f3eaf0;
     }
     .stock-row:first-child { border-top: none; }
     .stock-info { flex: 1; min-width: 0; }
-    .stock-name { font-weight: 600; font-size: 0.97rem; }
-    .stock-year { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+    .stock-name { font-weight: 700; font-size: 0.97rem; color: var(--text); }
+    .stock-year { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
 
-    .qty-ctrl { display: flex; align-items: center; gap: 4px; }
+    .qty-ctrl { display: flex; align-items: center; gap: 2px; }
     .qty-btn {
-      background: none;
+      width: 32px; height: 32px;
       border: none;
-      font-size: 1.5rem;
+      border-radius: 50%;
+      font-size: 1.2rem;
       cursor: pointer;
-      padding: 2px 6px;
-      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
       -webkit-tap-highlight-color: transparent;
       line-height: 1;
+      font-weight: 700;
+      transition: transform 0.1s;
     }
-    .qty-btn.minus { color: var(--red); }
-    .qty-btn.plus  { color: var(--orange); }
-    .qty-val { font-weight: 700; font-size: 1.1rem; min-width: 28px; text-align: center; }
+    .qty-btn:active { transform: scale(0.9); }
+    .qty-btn.minus { background: #fde8e8; color: var(--red); }
+    .qty-btn.plus  { background: #e2f5e0; color: var(--green); }
+    .qty-val { font-weight: 700; font-size: 1.1rem; min-width: 32px; text-align: center; color: var(--text); }
 
     /* ── FAB ── */
     .fab {
       position: fixed;
-      bottom: calc(20px + var(--safe-bottom));
+      bottom: calc(24px + var(--safe-bottom));
       right: 20px;
-      background: var(--orange);
+      background: var(--purple);
       color: white;
       border: none;
       border-radius: 50%;
@@ -160,7 +183,7 @@
       height: 58px;
       font-size: 1.8rem;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(232,93,4,0.4);
+      box-shadow: 0 6px 20px rgba(139,90,140,0.45);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -173,7 +196,7 @@
     /* ── Modal ── */
     .overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.4);
+      background: rgba(26,14,46,0.35);
       z-index: 100;
       display: flex;
       align-items: flex-end;
@@ -184,20 +207,20 @@
 
     .modal {
       background: white;
-      border-radius: 20px 20px 0 0;
-      padding: 24px 20px 20px;
+      border-radius: 24px 24px 0 0;
+      padding: 28px 20px 24px;
       width: 100%;
       max-width: 480px;
     }
-    .modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; }
+    .modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: var(--text); }
 
     .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
-    .field input {
+    .field label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+    .field input, .field select {
       width: 100%;
-      padding: 11px 14px;
+      padding: 12px 14px;
       border: 1.5px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 1rem;
       font-family: inherit;
       color: var(--text);
@@ -205,25 +228,25 @@
       outline: none;
       transition: border-color 0.15s;
     }
-    .field input:focus { border-color: var(--orange); }
+    .field input:focus, .field select:focus { border-color: var(--purple); }
 
     .field-row { display: flex; gap: 10px; }
     .field-row .field { flex: 1; }
 
-    .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
     .btn {
       flex: 1;
-      padding: 13px;
+      padding: 14px;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       font-family: inherit;
       -webkit-tap-highlight-color: transparent;
     }
-    .btn-cancel { background: var(--border); color: var(--text); }
-    .btn-ok { background: var(--orange); color: white; }
+    .btn-cancel { background: var(--pink-mid); color: var(--muted); }
+    .btn-ok { background: var(--purple); color: white; }
 
     /* ── Context menu ── */
     .ctx-overlay {
@@ -235,20 +258,20 @@
       padding-bottom: var(--safe-bottom);
     }
     .ctx-overlay.hidden { display: none; }
-    .ctx-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.3); }
+    .ctx-bg { position: absolute; inset: 0; background: rgba(26,14,46,0.3); }
     .ctx-menu {
       position: relative;
       background: white;
-      border-radius: 20px 20px 0 0;
+      border-radius: 24px 24px 0 0;
       width: 100%;
       max-width: 480px;
       overflow: hidden;
     }
     .ctx-item {
-      padding: 16px 20px;
+      padding: 17px 20px;
       font-size: 1rem;
       cursor: pointer;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid #f3eaf0;
       -webkit-tap-highlight-color: transparent;
       font-family: inherit;
       background: none;
@@ -258,17 +281,18 @@
       width: 100%;
       text-align: left;
       color: var(--text);
+      font-weight: 500;
     }
     .ctx-item:first-child { border-top: none; }
-    .ctx-item:active { background: var(--bg); }
+    .ctx-item:active { background: var(--purple-soft); }
     .ctx-item.danger { color: var(--red); }
     .ctx-title {
-      padding: 14px 20px 10px;
-      font-size: 0.82rem;
+      padding: 16px 20px 10px;
+      font-size: 0.78rem;
       color: var(--muted);
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.07em;
     }
   </style>
 </head>
@@ -352,7 +376,7 @@ function renderLocations() {
     return;
   }
 
-  main.innerHTML = data.map(loc => {
+  const locsHtml = data.map(loc => {
     const t = totalLoc(loc);
     const n = loc.entries.length;
     return `<div class="card">
@@ -366,6 +390,27 @@ function renderLocations() {
       </div>
     </div>`;
   }).join('');
+
+  const allEntries = data.flatMap(loc =>
+    loc.entries.map(e => ({ id: e.id, name: e.name, qty: e.qty, year: e.year, locName: loc.name }))
+  ).sort((a, b) => a.name.localeCompare(b.name));
+
+  const allHtml = allEntries.length === 0 ? '' :
+    `<div class="card">${allEntries.map(e => `
+      <div class="stock-row">
+        <div class="stock-info">
+          <div class="stock-name">${esc(e.name)}</div>
+          <div class="stock-year">${esc(e.locName)}${e.year ? ' · ' + esc(e.year) : ''}</div>
+        </div>
+        <span class="qty-val">${e.qty}</span>
+      </div>`).join('')}</div>`;
+
+  main.innerHTML = locsHtml +
+    `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 14px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Tout le stock</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>` + allHtml;
 }
 
 function renderStock(locId) {
