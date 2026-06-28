@@ -622,15 +622,42 @@ function onFab() {
 }
 
 // ── Quantity ──────────────────────────────────────────────────────────────────
-function pickJarToOpen() {
-  const entries = data.flatMap(loc =>
+function pickJarToOpen(query = '') {
+  const all = data.flatMap(loc =>
     loc.entries.map(e => ({ locId: loc.id, entryId: e.id, name: e.name, locName: loc.name, year: e.year }))
   ).sort((a, b) => a.name.localeCompare(b.name));
 
-  openCtx('Quelle confiture ?', entries.map(e => ({
-    label: `${e.name}${e.year ? ' ' + e.year : ''} — ${e.locName}`,
-    action: () => confirmOpenJar(e.locId, e.entryId, e.name),
-  })));
+  const filtered = query
+    ? all.filter(e => e.name.toLowerCase().includes(query.toLowerCase()))
+    : all;
+
+  const menu = document.getElementById('ctxMenu');
+  menu.innerHTML = `
+    <div class="ctx-title">Quelle confiture ?</div>
+    <div style="padding:0 16px 12px;">
+      <div style="position:relative;">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:0.95rem;pointer-events:none;">🔍</span>
+        <input id="jarSearch" type="search" value="${esc(query)}"
+          placeholder="Rechercher…"
+          oninput="pickJarToOpen(this.value)"
+          style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--border);
+          border-radius:12px;font-size:0.9rem;font-family:inherit;text-transform:uppercase;
+          background:var(--bg);outline:none;color:var(--text);" />
+      </div>
+    </div>
+    ${filtered.length === 0
+      ? `<div style="padding:16px;text-align:center;color:var(--muted);font-size:0.85rem;">Aucun résultat</div>`
+      : filtered.map((e, i) =>
+          `<button class="ctx-item" onclick="ctxRawAction(${i})">${esc(e.name)}${e.year ? ' ' + esc(e.year) : ''} — ${esc(e.locName)}</button>`
+        ).join('')
+    }`;
+
+  document.getElementById('ctxOverlay').classList.remove('hidden');
+  document.getElementById('ctxOverlay')._actions = filtered.map(e =>
+    () => confirmOpenJar(e.locId, e.entryId, e.name)
+  );
+
+  setTimeout(() => document.getElementById('jarSearch')?.focus(), 100);
 }
 
 function confirmOpenJar(locId, entryId, name) {
@@ -867,6 +894,12 @@ function ctxAction(i) {
 
 function closeCtx() {
   document.getElementById('ctxOverlay').classList.add('hidden');
+}
+
+function ctxRawAction(i) {
+  const actions = document.getElementById('ctxOverlay')._actions;
+  closeCtx();
+  if (actions && actions[i]) actions[i]();
 }
 
 // ── Service Worker ────────────────────────────────────────────────────────────
