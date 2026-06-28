@@ -370,6 +370,8 @@
       box-shadow: 0 2px 8px rgba(90,40,100,0.08);
     }
     .search-bar input::placeholder { color: var(--muted); }
+    input, select, button, textarea { text-transform: uppercase; }
+    input::placeholder { text-transform: uppercase; }
     .search-wrap { position: relative; }
     .search-icon {
       position: absolute;
@@ -465,20 +467,26 @@ function renderLocations() {
     total ? `${total} pot${total > 1 ? 's' : ''}` : '';
   document.getElementById('backBtn').style.display = 'none';
   document.getElementById('fab').classList.remove('visible');
-  document.getElementById('addLocBtn').classList.add('visible');
   document.getElementById('addStockBtn').classList.remove('visible');
   document.getElementById('searchBar').classList.add('visible');
   const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
 
-  const main = document.getElementById('main');
+  const addLocBtn = document.getElementById('addLocBtn');
   if (data.length === 0) {
-    main.innerHTML = `<div class="empty">
+    addLocBtn.textContent = '＋ Ajouter un lieu';
+    addLocBtn.onclick = promptAddLocation;
+    addLocBtn.classList.add('visible');
+    document.getElementById('main').innerHTML = `<div class="empty">
       <div class="icon">🫙</div>
       <p>Aucun lieu de stockage</p>
-      <p style="margin-top:6px;font-size:0.85rem">Appuie sur + pour en ajouter un</p>
     </div>`;
     return;
   }
+  addLocBtn.textContent = '🫙 Ouvrir un pot';
+  addLocBtn.onclick = pickJarToOpen;
+  addLocBtn.classList.add('visible');
+
+  const main = document.getElementById('main');
 
   const locsHtml = query ? '' : data.map(loc => {
     const t = totalLoc(loc);
