@@ -397,7 +397,7 @@
 <main id="main"></main>
 
 <button class="fab hidden" id="fab"></button>
-<button class="add-loc-btn" id="addLocBtn" onclick="promptAddLocation()">＋ Ajouter un lieu</button>
+<button class="add-loc-btn" id="addLocBtn" onclick="pickJarToOpen()">🫙 Ouvrir un pot</button>
 <button class="add-stock-btn" id="addStockBtn" onclick="promptAddEntry(currentLocId)">＋ Agrandir le stock</button>
 
 <!-- Modal ajout/édition -->
@@ -458,7 +458,7 @@ function render() {
 
 function renderLocations() {
   const total = totalAll();
-  document.getElementById('headerTitle').textContent = 'Stock Confiture';
+  document.getElementById('headerTitle').textContent = '🫙 Stock Confiture';
   document.getElementById('headerTotal').textContent =
     total ? `${total} pot${total > 1 ? 's' : ''}` : '';
   document.getElementById('backBtn').style.display = 'none';
@@ -514,23 +514,22 @@ function renderLocations() {
   ).join('');
 
   const divider = `<div style="margin:18px 0 10px;">
+    <button onclick="promptAddLocation()" style="
+      width:100%;background:white;color:var(--purple);
+      border:1.5px dashed var(--purple-soft);border-radius:14px;
+      padding:10px;margin-bottom:12px;
+      font-family:inherit;font-size:0.82rem;font-weight:700;
+      text-transform:uppercase;letter-spacing:0.04em;
+      cursor:pointer;-webkit-tap-highlight-color:transparent;
+    ">＋ Ajouter un lieu</button>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
       <div style="flex:1;height:1px;background:var(--border);"></div>
       <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Tout le stock</span>
       <div style="flex:1;height:1px;background:var(--border);"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-right:2px;">Trier :</span>
-        ${sortPills}
-      </div>
-      <button onclick="pickJarToOpen()" style="
-        background:var(--purple-soft);color:var(--purple-dark);
-        border:none;border-radius:20px;padding:5px 12px;
-        font-family:inherit;font-size:0.75rem;font-weight:700;
-        text-transform:uppercase;letter-spacing:0.04em;
-        cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;
-      ">🫙 Ouvrir un pot</button>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-right:2px;">Trier :</span>
+      ${sortPills}
     </div>
   </div>`;
 
@@ -739,7 +738,15 @@ function promptAddEntry(locId) {
       const qty  = parseInt(document.getElementById('f_qty').value) || 0;
       const yr   = document.getElementById('f_year').value.trim();
       if (!name) return;
-      getLoc(locId).entries.push({ id: uid(), name, qty, year: yr });
+      const loc = getLoc(locId);
+      const existing = loc.entries.find(e =>
+        e.name.toLowerCase() === name.toLowerCase() && e.year === yr
+      );
+      if (existing) {
+        existing.qty += qty;
+      } else {
+        loc.entries.push({ id: uid(), name, qty, year: yr });
+      }
       saveData(data);
       closeModal();
       render();
