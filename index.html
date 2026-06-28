@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Confiture" />
+  <meta name="theme-color" content="#e85d04" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Stock Confiture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #e85d04;
+      --orange-light: #fff1e6;
+      --orange-dark: #c44d02;
+      --red: #dc2626;
+      --text: #1c1917;
+      --muted: #78716c;
+      --border: #e7e5e4;
+      --card: #ffffff;
+      --bg: #fafaf9;
+      --radius: 14px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--orange);
+      color: white;
+      padding: calc(16px + var(--safe-top)) 16px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 { font-size: 1.15rem; font-weight: 700; flex: 1; }
+    header .total { font-size: 0.85rem; opacity: 0.8; white-space: nowrap; }
+    .back-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+      display: none;
+    }
+
+    /* ── List ── */
+    main { padding: 16px; padding-bottom: calc(80px + var(--safe-bottom)); }
+
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty p { font-size: 0.95rem; }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .card-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      gap: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    .card-row:active { background: var(--orange-light); }
+
+    .badge {
+      background: var(--orange-light);
+      color: var(--orange-dark);
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-info { flex: 1; min-width: 0; }
+    .card-name { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+
+    /* ── Stock row ── */
+    .stock-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .stock-row:first-child { border-top: none; }
+    .stock-info { flex: 1; min-width: 0; }
+    .stock-name { font-weight: 600; font-size: 0.97rem; }
+    .stock-year { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+
+    .qty-ctrl { display: flex; align-items: center; gap: 4px; }
+    .qty-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 8px;
+      -webkit-tap-highlight-color: transparent;
+      line-height: 1;
+    }
+    .qty-btn.minus { color: var(--red); }
+    .qty-btn.plus  { color: var(--orange); }
+    .qty-val { font-weight: 700; font-size: 1.1rem; min-width: 28px; text-align: center; }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed;
+      bottom: calc(20px + var(--safe-bottom));
+      right: 20px;
+      background: var(--orange);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      font-size: 1.8rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(232,93,4,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s;
+      z-index: 20;
+    }
+    .fab:active { transform: scale(0.93); }
+
+    /* ── Modal ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: var(--safe-bottom);
+    }
+    .overlay.hidden { display: none; }
+
+    .modal {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px 20px;
+      width: 100%;
+      max-width: 480px;
+    }
+    .modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+    .field input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: var(--orange); }
+
+    .field-row { display: flex; gap: 10px; }
+    .field-row .field { flex: 1; }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
+    .btn {
+      flex: 1;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-cancel { background: var(--border); color: var(--text); }
+    .btn-ok { background: var(--orange); color: white; }
+
+    /* ── Context menu ── */
+    .ctx-overlay {
+      position: fixed; inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: var(--safe-bottom);
+    }
+    .ctx-overlay.hidden { display: none; }
+    .ctx-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.3); }
+    .ctx-menu {
+      position: relative;
+      background: white;
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+    }
+    .ctx-item {
+      padding: 16px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      border-top: 1px solid var(--border);
+      -webkit-tap-highlight-color: transparent;
+      font-family: inherit;
+      background: none;
+      border-left: none;
+      border-right: none;
+      border-bottom: none;
+      width: 100%;
+      text-align: left;
+      color: var(--text);
+    }
+    .ctx-item:first-child { border-top: none; }
+    .ctx-item:active { background: var(--bg); }
+    .ctx-item.danger { color: var(--red); }
+    .ctx-title {
+      padding: 14px 20px 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <button class="back-btn" id="backBtn" onclick="showLocations()">‹</button>
+  <h1 id="headerTitle">Stock Confiture</h1>
+  <span class="total" id="headerTotal"></span>
+</header>
+
+<main id="main"></main>
+
+<button class="fab" id="fab" onclick="onFab()">+</button>
+
+<!-- Modal ajout/édition -->
+<div class="overlay hidden" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Nouveau lieu</h2>
+    <div id="modalFields"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-ok" onclick="submitModal()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Menu contextuel -->
+<div class="ctx-overlay hidden" id="ctxOverlay">
+  <div class="ctx-bg" onclick="closeCtx()"></div>
+  <div class="ctx-menu" id="ctxMenu"></div>
+</div>
+
+<script>
+// ── Store ─────────────────────────────────────────────────────────────────────
+const STORE_KEY = 'confiture_v1';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+  catch { return []; }
+}
+function saveData(data) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+}
+
+let data = loadData();
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentLocId = null; // null = on est sur la liste des lieux
+let modalCallback = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function getLoc(id) { return data.find(l => l.id === id); }
+
+function totalLoc(loc) { return loc.entries.reduce((s, e) => s + e.qty, 0); }
+
+function totalAll() { return data.reduce((s, l) => s + totalLoc(l), 0); }
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  if (currentLocId === null) renderLocations();
+  else renderStock(currentLocId);
+}
+
+function renderLocations() {
+  const total = totalAll();
+  document.getElementById('headerTitle').textContent = 'Stock Confiture';
+  document.getElementById('headerTotal').textContent =
+    total ? `${total} pot${total > 1 ? 's' : ''}` : '';
+  document.getElementById('backBtn').style.display = 'none';
+
+  const main = document.getElementById('main');
+  if (data.length === 0) {
+    main.innerHTML = `<div class="empty">
+      <div class="icon">🫙</div>
+      <p>Aucun lieu de stockage</p>
+      <p style="margin-top:6px;font-size:0.85rem">Appuie sur + pour en ajouter un</p>
+    </div>`;
+    return;
+  }
+
+  main.innerHTML = data.map(loc => {
+    const t = totalLoc(loc);
+    const n = loc.entries.length;
+    return `<div class="card">
+      <div class="card-row" onclick="openLoc('${loc.id}')">
+        <div class="badge">${t}</div>
+        <div class="card-info">
+          <div class="card-name">${esc(loc.name)}</div>
+          <div class="card-sub">${n} référence${n > 1 ? 's' : ''}</div>
+        </div>
+        <button class="menu-btn" onclick="event.stopPropagation(); locMenu('${loc.id}')">⋯</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderStock(locId) {
+  const loc = getLoc(locId);
+  if (!loc) { showLocations(); return; }
+
+  const total = totalLoc(loc);
+  document.getElementById('headerTitle').textContent = esc(loc.name);
+  document.getElementById('headerTotal').textContent =
+    total ? `${total} pot${total > 1 ? 's' : ''}` : '';
+  document.getElementById('backBtn').style.display = '';
+
+  const main = document.getElementById('main');
+  if (loc.entries.length === 0) {
+    main.innerHTML = `<div class="empty">
+      <div class="icon">📦</div>
+      <p>Aucun stock ici</p>
+      <p style="margin-top:6px;font-size:0.85rem">Appuie sur + pour ajouter une confiture</p>
+    </div>`;
+    return;
+  }
+
+  main.innerHTML = `<div class="card">${loc.entries.map(e => `
+    <div class="stock-row">
+      <div class="stock-info">
+        <div class="stock-name">${esc(e.name)}</div>
+        ${e.year ? `<div class="stock-year">${esc(e.year)}</div>` : ''}
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn minus" onclick="adjustQty('${loc.id}','${e.id}',-1)">−</button>
+        <span class="qty-val">${e.qty}</span>
+        <button class="qty-btn plus"  onclick="adjustQty('${loc.id}','${e.id}',+1)">+</button>
+      </div>
+      <button class="menu-btn" onclick="entryMenu('${loc.id}','${e.id}')">⋯</button>
+    </div>`).join('')}</div>`;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function openLoc(id) { currentLocId = id; render(); }
+function showLocations() { currentLocId = null; render(); }
+
+// ── FAB ───────────────────────────────────────────────────────────────────────
+function onFab() {
+  if (currentLocId === null) promptAddLocation();
+  else promptAddEntry(currentLocId);
+}
+
+// ── Quantity ──────────────────────────────────────────────────────────────────
+function adjustQty(locId, entryId, delta) {
+  const loc = getLoc(locId);
+  const entry = loc.entries.find(e => e.id === entryId);
+  if (!entry) return;
+  entry.qty = Math.max(0, entry.qty + delta);
+  saveData(data);
+  render();
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────────
+function openModal(title, fields, callback) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalFields').innerHTML = fields;
+  modalCallback = callback;
+  document.getElementById('overlay').classList.remove('hidden');
+  setTimeout(() => {
+    const first = document.querySelector('#modalFields input');
+    if (first) first.focus();
+  }, 100);
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.add('hidden');
+  modalCallback = null;
+}
+
+function submitModal() {
+  if (modalCallback) modalCallback();
+}
+
+// Appui Entrée pour valider
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !document.getElementById('overlay').classList.contains('hidden')) {
+    submitModal();
+  }
+});
+
+// ── Lieu ──────────────────────────────────────────────────────────────────────
+function promptAddLocation() {
+  openModal('Nouveau lieu',
+    `<div class="field"><label>Nom du lieu</label>
+     <input id="f_name" type="text" placeholder="Cave, Cuisine, Garage…" /></div>`,
+    () => {
+      const name = document.getElementById('f_name').value.trim();
+      if (!name) return;
+      data.push({ id: uid(), name, entries: [] });
+      saveData(data);
+      closeModal();
+      render();
+    }
+  );
+}
+
+function promptRenameLocation(locId) {
+  const loc = getLoc(locId);
+  openModal('Renommer',
+    `<div class="field"><label>Nom du lieu</label>
+     <input id="f_name" type="text" value="${esc(loc.name)}" /></div>`,
+    () => {
+      const name = document.getElementById('f_name').value.trim();
+      if (!name) return;
+      loc.name = name;
+      saveData(data);
+      closeModal();
+      render();
+    }
+  );
+}
+
+function deleteLocation(locId) {
+  const loc = getLoc(locId);
+  if (!confirm(`Supprimer "${loc.name}" et tout son stock ?`)) return;
+  data = data.filter(l => l.id !== locId);
+  saveData(data);
+  if (currentLocId === locId) currentLocId = null;
+  render();
+}
+
+function locMenu(locId) {
+  const loc = getLoc(locId);
+  openCtx(esc(loc.name), [
+    { label: 'Renommer', action: () => promptRenameLocation(locId) },
+    { label: 'Supprimer', danger: true, action: () => deleteLocation(locId) },
+  ]);
+}
+
+// ── Entrée confiture ──────────────────────────────────────────────────────────
+function promptAddEntry(locId) {
+  const year = new Date().getFullYear();
+  openModal('Ajouter une confiture',
+    `<div class="field"><label>Nom</label>
+     <input id="f_name" type="text" placeholder="Fraises, Abricots, Mirabelles…" /></div>
+     <div class="field-row">
+       <div class="field"><label>Quantité</label>
+         <input id="f_qty" type="number" min="0" value="1" /></div>
+       <div class="field"><label>Année</label>
+         <input id="f_year" type="number" value="${year}" /></div>
+     </div>`,
+    () => {
+      const name = document.getElementById('f_name').value.trim();
+      const qty  = parseInt(document.getElementById('f_qty').value) || 0;
+      const yr   = document.getElementById('f_year').value.trim();
+      if (!name) return;
+      getLoc(locId).entries.push({ id: uid(), name, qty, year: yr });
+      saveData(data);
+      closeModal();
+      render();
+    }
+  );
+}
+
+function promptEditEntry(locId, entryId) {
+  const loc = getLoc(locId);
+  const e = loc.entries.find(x => x.id === entryId);
+  openModal('Modifier',
+    `<div class="field"><label>Nom</label>
+     <input id="f_name" type="text" value="${esc(e.name)}" /></div>
+     <div class="field-row">
+       <div class="field"><label>Quantité</label>
+         <input id="f_qty" type="number" min="0" value="${e.qty}" /></div>
+       <div class="field"><label>Année</label>
+         <input id="f_year" type="number" value="${esc(e.year)}" /></div>
+     </div>`,
+    () => {
+      const name = document.getElementById('f_name').value.trim();
+      const qty  = parseInt(document.getElementById('f_qty').value) || 0;
+      const yr   = document.getElementById('f_year').value.trim();
+      if (!name) return;
+      e.name = name; e.qty = qty; e.year = yr;
+      saveData(data);
+      closeModal();
+      render();
+    }
+  );
+}
+
+function deleteEntry(locId, entryId) {
+  const loc = getLoc(locId);
+  const e = loc.entries.find(x => x.id === entryId);
+  if (!confirm(`Supprimer "${e.name}" ?`)) return;
+  loc.entries = loc.entries.filter(x => x.id !== entryId);
+  saveData(data);
+  render();
+}
+
+function entryMenu(locId, entryId) {
+  const e = getLoc(locId).entries.find(x => x.id === entryId);
+  openCtx(esc(e.name), [
+    { label: 'Modifier', action: () => promptEditEntry(locId, entryId) },
+    { label: 'Supprimer', danger: true, action: () => deleteEntry(locId, entryId) },
+  ]);
+}
+
+// ── Context menu ──────────────────────────────────────────────────────────────
+function openCtx(title, items) {
+  const menu = document.getElementById('ctxMenu');
+  menu.innerHTML = `<div class="ctx-title">${title}</div>` +
+    items.map((item, i) =>
+      `<button class="ctx-item${item.danger ? ' danger' : ''}" onclick="ctxAction(${i})">${item.label}</button>`
+    ).join('');
+  document.getElementById('ctxOverlay').classList.remove('hidden');
+  document.getElementById('ctxOverlay')._actions = items.map(i => i.action);
+}
+
+function ctxAction(i) {
+  const actions = document.getElementById('ctxOverlay')._actions;
+  closeCtx();
+  if (actions && actions[i]) actions[i]();
+}
+
+function closeCtx() {
+  document.getElementById('ctxOverlay').classList.add('hidden');
+}
+
+// ── Service Worker ────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
