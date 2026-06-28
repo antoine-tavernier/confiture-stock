@@ -376,7 +376,7 @@ function renderStock(locId) {
   document.getElementById('headerTitle').textContent = esc(loc.name);
   document.getElementById('headerTotal').textContent =
     total ? `${total} pot${total > 1 ? 's' : ''}` : '';
-  document.getElementById('backBtn').style.display = '';
+  document.getElementById('backBtn').style.display = 'block';
 
   const main = document.getElementById('main');
   if (loc.entries.length === 0) {
@@ -565,10 +565,55 @@ function deleteEntry(locId, entryId) {
 
 function entryMenu(locId, entryId) {
   const e = getLoc(locId).entries.find(x => x.id === entryId);
-  openCtx(esc(e.name), [
+  const items = [
     { label: 'Modifier', action: () => promptEditEntry(locId, entryId) },
-    { label: 'Supprimer', danger: true, action: () => deleteEntry(locId, entryId) },
-  ]);
+  ];
+  if (data.filter(l => l.id !== locId).length > 0) {
+    items.push({ label: 'Transférer vers…', action: () => promptTransfer(locId, entryId) });
+  }
+  items.push({ label: 'Supprimer', danger: true, action: () => deleteEntry(locId, entryId) });
+  openCtx(esc(e.name), items);
+}
+
+function promptTransfer(locId, entryId) {
+  const entry = getLoc(locId).entries.find(x => x.id === entryId);
+  const destinations = data.filter(l => l.id !== locId);
+  const options = destinations.map(l =>
+    `<option value="${l.id}">${esc(l.name)}</option>`
+  ).join('');
+
+  openModal('Transférer',
+    `<div class="field"><label>Vers quel lieu ?</label>
+      <select id="f_dest" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:1rem;font-family:inherit;background:var(--bg);outline:none;">
+        ${options}
+      </select>
+    </div>
+    <div class="field"><label>Quantité à transférer (max ${entry.qty})</label>
+      <input id="f_qty" type="number" min="1" max="${entry.qty}" value="${entry.qty}" />
+    </div>`,
+    () => {
+      const destId = document.getElementById('f_dest').value;
+      const qty = Math.min(parseInt(document.getElementById('f_qty').value) || 0, entry.qty);
+      if (qty <= 0) return;
+
+      const dest = getLoc(destId);
+      const existing = dest.entries.find(x => x.name === entry.name && x.year === entry.year);
+      if (existing) {
+        existing.qty += qty;
+      } else {
+        dest.entries.push({ id: uid(), name: entry.name, qty, year: entry.year });
+      }
+
+      entry.qty -= qty;
+      if (entry.qty === 0) {
+        getLoc(locId).entries = getLoc(locId).entries.filter(x => x.id !== entryId);
+      }
+
+      saveData(data);
+      closeModal();
+      render();
+    }
+  );
 }
 
 // ── Context menu ──────────────────────────────────────────────────────────────
